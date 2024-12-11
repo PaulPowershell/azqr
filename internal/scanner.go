@@ -38,13 +38,33 @@ type (
 		Debug                   bool
 		ServiceScanners         []azqr.IAzureScanner
 		ForceAzureCliCredential bool
-		FilterFile              string
+		Filters                 *azqr.Filters
 		UseAzqrRecommendations  bool
 		UseAprlRecommendations  bool
 	}
 
 	Scanner struct{}
 )
+
+func NewScanParams() *ScanParams {
+	return &ScanParams{
+		SubscriptionID:          "",
+		ResourceGroup:           "",
+		OutputName:              "",
+		Defender:                true,
+		Advisor:                 true,
+		Cost:                    true,
+		Mask:                    true,
+		Csv:                     false,
+		Json:                    false,
+		Debug:                   false,
+		ServiceScanners:         []azqr.IAzureScanner{},
+		ForceAzureCliCredential: false,
+		Filters:                 azqr.NewFilters(),
+		UseAzqrRecommendations:  true,
+		UseAprlRecommendations:  true,
+	}
+}
 
 func (sc Scanner) Scan(params *ScanParams) {
 	// Default level for this example is info, unless debug flag is present
@@ -58,7 +78,7 @@ func (sc Scanner) Scan(params *ScanParams) {
 	outputFile := sc.generateOutputFileName(params.OutputName)
 
 	// load filters
-	filters := azqr.LoadFilters(params.FilterFile)
+	filters := params.Filters
 
 	// validate input
 	if params.SubscriptionID == "" && params.ResourceGroup != "" {

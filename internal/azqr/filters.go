@@ -12,12 +12,12 @@ import (
 
 type (
 	Filters struct {
-		Azqr *AzqrFilter `yaml:"azqr"`
+		Azqr *AzqrFilter `yaml:"azqr" json:"azqr"`
 	}
 
 	AzqrFilter struct {
-		Include          *IncludeFilter `yaml:"include"`
-		Exclude          *ExcludeFilter `yaml:"exclude"`
+		Include          *IncludeFilter `yaml:"include" json:"include"`
+		Exclude          *ExcludeFilter `yaml:"exclude" json:"exclude"`
 		iSubscriptions   map[string]bool
 		iResourceGroups  map[string]bool
 		xSubscriptions   map[string]bool
@@ -28,16 +28,16 @@ type (
 
 	// ExcludeFilter - Struct for ExcludeFilter
 	ExcludeFilter struct {
-		Subscriptions   []string `yaml:"subscriptions,flow"`
-		ResourceGroups  []string `yaml:"resourceGroups,flow"`
-		Services        []string `yaml:"services,flow"`
-		Recommendations []string `yaml:"recommendations,flow"`
+		Subscriptions   []string `yaml:"subscriptions,flow" json:"subscriptions"`
+		ResourceGroups  []string `yaml:"resourceGroups,flow" json:"resourceGroups"`
+		Services        []string `yaml:"services,flow" json:"services"`
+		Recommendations []string `yaml:"recommendations,flow" json:"recommendations"`
 	}
 
 	// IncludeFilter - Struct for IncludeFilter
 	IncludeFilter struct {
-		Subscriptions  []string `yaml:"subscriptions,flow"`
-		ResourceGroups []string `yaml:"resourceGroups,flow"`
+		Subscriptions  []string `yaml:"subscriptions,flow" json:"subscriptions"`
+		ResourceGroups []string `yaml:"resourceGroups,flow" json:"resourceGroups"`
 	}
 )
 
@@ -83,8 +83,8 @@ func (e *AzqrFilter) IsRecommendationExcluded(recommendationID string) bool {
 	return ok
 }
 
-func LoadFilters(filterFile string) *Filters {
-	filters := &Filters{
+func NewFilters() *Filters {
+	return &Filters{
 		Azqr: &AzqrFilter{
 			Include: &IncludeFilter{
 				Subscriptions:  []string{},
@@ -97,6 +97,10 @@ func LoadFilters(filterFile string) *Filters {
 			},
 		},
 	}
+}
+
+func LoadFilters(filterFile string) *Filters {
+	filters := NewFilters()
 
 	if filterFile != "" {
 		data, err := os.ReadFile(filterFile)
