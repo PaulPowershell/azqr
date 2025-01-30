@@ -89,8 +89,8 @@ func (rd *ReportData) ResourcesTable() [][]string {
 		}
 
 		row := []string{
-			rd.TenantID,
-			MaskSubscriptionID(r.SubscriptionID, rd.Mask),
+			MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask),
+			MaskSubscriptionOrTenantID(r.SubscriptionID, rd.Mask),
 			r.ResourceGroup,
 			r.Location,
 			r.Type,
@@ -113,7 +113,7 @@ func (rd *ReportData) ImpactedTable() [][]string {
 
 	rows := [][]string{}
 	for _, r := range rd.AprlData {
-		row := append([]string{rd.TenantID}, []string{
+		row := append([]string{MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask)}, []string{
 			"Azure Resource Graph",
 			r.Source,
 			string(r.Category),
@@ -121,7 +121,7 @@ func (rd *ReportData) ImpactedTable() [][]string {
 			r.ResourceType,
 			r.Recommendation,
 			r.RecommendationID,
-			MaskSubscriptionID(r.SubscriptionID, rd.Mask),
+			MaskSubscriptionOrTenantID(r.SubscriptionID, rd.Mask),
 			r.SubscriptionName,
 			r.ResourceGroup,
 			r.Name,
@@ -147,8 +147,8 @@ func (rd *ReportData) ImpactedTable() [][]string {
 					d.Type,
 					r.Recommendation,
 					r.RecommendationID,
-					MaskSubscriptionID(d.SubscriptionID, rd.Mask),
-					d.TenantID,
+					MaskSubscriptionOrTenantID(d.SubscriptionID, rd.Mask),
+					MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask),
 					d.SubscriptionName,
 					d.ResourceGroup,
 					d.ServiceName,
@@ -175,10 +175,10 @@ func (rd *ReportData) CostTable() [][]string {
 	rows := [][]string{}
 	for _, r := range rd.CostData.Items {
 		row := []string{
-			rd.TenantID,
+			MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask),
 			rd.CostData.From.Format("2006-01-02"),
 			rd.CostData.To.Format("2006-01-02"),
-			MaskSubscriptionID(r.SubscriptionID, rd.Mask),
+			MaskSubscriptionOrTenantID(r.SubscriptionID, rd.Mask),
 			r.SubscriptionName,
 			r.ServiceName,
 			r.Value,
@@ -196,8 +196,8 @@ func (rd *ReportData) DefenderTable() [][]string {
 	rows := [][]string{}
 	for _, d := range rd.DefenderData {
 		row := []string{
-			rd.TenantID,
-			MaskSubscriptionID(d.SubscriptionID, rd.Mask),
+			MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask),
+			MaskSubscriptionOrTenantID(d.SubscriptionID, rd.Mask),
 			d.SubscriptionName,
 			d.Name,
 			d.Tier,
@@ -215,8 +215,8 @@ func (rd *ReportData) AdvisorTable() [][]string {
 	rows := [][]string{}
 	for _, d := range rd.AdvisorData {
 		row := []string{
-			rd.TenantID,
-			MaskSubscriptionID(d.SubscriptionID, rd.Mask),
+			MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask),
+			MaskSubscriptionOrTenantID(d.SubscriptionID, rd.Mask),
 			d.SubscriptionName,
 			d.Type,
 			d.Name,
@@ -275,7 +275,7 @@ func (rd *ReportData) RecommendationsTable() [][]string {
 			}
 
 			row := []string{
-				rd.TenantID,
+				MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask),
 				fmt.Sprintf("%t", implemented),
 				fmt.Sprint(counter[r.RecommendationID]),
 				"Azure Service",
@@ -302,7 +302,7 @@ func (rd *ReportData) ResourceTypesTable() [][]string {
 	rows := [][]string{}
 	for _, r := range rd.ResourceTypeCount {
 		row := []string{
-			rd.TenantID,
+			MaskSubscriptionOrTenantID(rd.TenantID, rd.Mask),
 			r.Subscription,
 			r.ResourceType,
 			fmt.Sprint(r.Count),
@@ -345,17 +345,17 @@ func NewReportData(outputFile string, mask bool, tenantID string) ReportData {
 	}
 }
 
-func MaskSubscriptionID(subscriptionID string, mask bool) string {
-	if len(subscriptionID) < 36 {
+func MaskSubscriptionOrTenantID(ID string, mask bool) string {
+	if len(ID) < 36 {
 		return ""
 	}
 
 	if !mask {
-		return subscriptionID
+		return ID
 	}
 
 	// Show only last 7 chars of the subscription ID
-	return fmt.Sprintf("xxxxxxxx-xxxx-xxxx-xxxx-xxxxx%s", subscriptionID[29:])
+	return fmt.Sprintf("xxxxxxxx-xxxx-xxxx-xxxx-xxxxx%s", ID[29:])
 }
 
 func MaskSubscriptionIDInResourceID(resourceID string, mask bool) string {
@@ -368,7 +368,7 @@ func MaskSubscriptionIDInResourceID(resourceID string, mask bool) string {
 	}
 
 	parts := strings.Split(resourceID, "/")
-	parts[2] = MaskSubscriptionID(parts[2], mask)
+	parts[2] = MaskSubscriptionOrTenantID(parts[2], mask)
 
 	return strings.Join(parts, "/")
 }
