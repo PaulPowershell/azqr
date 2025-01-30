@@ -5,7 +5,6 @@ package renderers
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -14,10 +13,9 @@ import (
 	"github.com/google/uuid"
 )
 
-var tenantID = os.Getenv("AZURE_TENANT_ID")
-
 type (
 	ReportData struct {
+		TenantID          string
 		OutputFileName    string
 		Mask              bool
 		AzqrData          []azqr.AzqrServiceResult
@@ -91,7 +89,7 @@ func (rd *ReportData) ResourcesTable() [][]string {
 		}
 
 		row := []string{
-			tenantID,
+			rd.TenantID,
 			MaskSubscriptionID(r.SubscriptionID, rd.Mask),
 			r.ResourceGroup,
 			r.Location,
@@ -115,7 +113,7 @@ func (rd *ReportData) ImpactedTable() [][]string {
 
 	rows := [][]string{}
 	for _, r := range rd.AprlData {
-		row := append([]string{tenantID}, []string{
+		row := append([]string{rd.TenantID}, []string{
 			"Azure Resource Graph",
 			r.Source,
 			string(r.Category),
@@ -177,7 +175,7 @@ func (rd *ReportData) CostTable() [][]string {
 	rows := [][]string{}
 	for _, r := range rd.CostData.Items {
 		row := []string{
-			tenantID,
+			rd.TenantID,
 			rd.CostData.From.Format("2006-01-02"),
 			rd.CostData.To.Format("2006-01-02"),
 			MaskSubscriptionID(r.SubscriptionID, rd.Mask),
@@ -198,7 +196,7 @@ func (rd *ReportData) DefenderTable() [][]string {
 	rows := [][]string{}
 	for _, d := range rd.DefenderData {
 		row := []string{
-			tenantID,
+			rd.TenantID,
 			MaskSubscriptionID(d.SubscriptionID, rd.Mask),
 			d.SubscriptionName,
 			d.Name,
@@ -217,7 +215,7 @@ func (rd *ReportData) AdvisorTable() [][]string {
 	rows := [][]string{}
 	for _, d := range rd.AdvisorData {
 		row := []string{
-			tenantID,
+			rd.TenantID,
 			MaskSubscriptionID(d.SubscriptionID, rd.Mask),
 			d.SubscriptionName,
 			d.Type,
@@ -277,7 +275,7 @@ func (rd *ReportData) RecommendationsTable() [][]string {
 			}
 
 			row := []string{
-				tenantID,
+				rd.TenantID,
 				fmt.Sprintf("%t", implemented),
 				fmt.Sprint(counter[r.RecommendationID]),
 				"Azure Service",
@@ -304,7 +302,7 @@ func (rd *ReportData) ResourceTypesTable() [][]string {
 	rows := [][]string{}
 	for _, r := range rd.ResourceTypeCount {
 		row := []string{
-			tenantID,
+			rd.TenantID,
 			r.Subscription,
 			r.ResourceType,
 			fmt.Sprint(r.Count),
@@ -329,9 +327,10 @@ func (rd *ReportData) ResourceIDs() []*string {
 	return ids
 }
 
-func NewReportData(outputFile string, mask bool) ReportData {
+func NewReportData(outputFile string, mask bool, tenantID string) ReportData {
 
 	return ReportData{
+		TenantID:       tenantID,
 		OutputFileName: outputFile,
 		Mask:           mask,
 		Recomendations: map[string]map[string]azqr.AprlRecommendation{},

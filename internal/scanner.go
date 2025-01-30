@@ -6,6 +6,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/Azure/azqr/internal/renderers/excel"
 	"github.com/Azure/azqr/internal/renderers/json"
 	"github.com/Azure/azqr/internal/scanners"
+	"github.com/golang-jwt/jwt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -29,6 +31,7 @@ type (
 		SubscriptionID          string
 		ResourceGroup           string
 		OutputName              string
+		TenantID                string
 		Defender                bool
 		Advisor                 bool
 		Cost                    bool
@@ -85,6 +88,9 @@ func (sc Scanner) Scan(params *ScanParams) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// get tenant ID
+	tenantID := sc.getTenantID(cred) // Assign to the package-level tenantID
+
 	// create ARM client options
 	clientOptions := &arm.ClientOptions{
 		ClientOptions: policy.ClientOptions{
@@ -110,7 +116,7 @@ func (sc Scanner) Scan(params *ScanParams) {
 	diagResults := map[string]bool{}
 
 	// initialize report data
-	reportData := renderers.NewReportData(outputFile, params.Mask)
+	reportData := renderers.NewReportData(outputFile, params.Mask, tenantID)
 
 	// get the APRL scan results
 	aprlScanner := AprlScanner{}
@@ -263,9 +269,43 @@ func (sc Scanner) retry(attempts int, sleep time.Duration, a azqr.IAzureScanner,
 	return nil, err
 }
 
+func (sc Scanner) getTenantID(cred azcore.TokenCredential) string {
+	var tenantID string
+
+	if os.Getenv("AZURE_TENANT_ID") != "" {
+		tenantID = os.Getenv("AZURE_TENANT_ID")
+		log.Info().Msgf("Using tenant ID from environment variable: %s", tenantID)
+		return tenantID
+	} else {
+		ctx := context.Background()
+		token, err := cred.GetToken(ctx, policy.TokenRequestOptions{
+			Scopes: []string{"https://management.azure.com/.default"},
+		})
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to get access token")
+		}
+
+		// Parse the JWT to extract the tenant ID
+		claims := jwt.MapClaims{}
+		_, _, err = new(jwt.Parser).ParseUnverified(token.Token, claims)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed to parse access token")
+		}
+
+		tenantID, ok := claims["tid"].(string)
+		if !ok {
+			log.Fatal().Msg("Tenant ID not found in token")
+		}
+
+		log.Info().Msgf("Successfully retrieved Tenant ID from token: %s", tenantID)
+		return tenantID
+	}
+}
+
 func (sc Scanner) newAzureCredential(forceAzureCliCredential bool) azcore.TokenCredential {
 	var cred azcore.TokenCredential
 	var err error
+
 	if !forceAzureCliCredential {
 		cred, err = azidentity.NewDefaultAzureCredential(nil)
 		if err != nil {

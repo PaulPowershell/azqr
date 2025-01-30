@@ -49,6 +49,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/trafficmanager/armtrafficmanager v1.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/virtualmachineimagebuilder/armvirtualmachineimagebuilder/v2 v2.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/webpubsub/armwebpubsub v1.3.0
+	github.com/golang-jwt/jwt v3.2.1+incompatible
 	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.8.1
@@ -59,6 +60,7 @@ require (
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.3.2 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
