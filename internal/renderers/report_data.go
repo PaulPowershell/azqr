@@ -5,6 +5,7 @@ package renderers
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -12,6 +13,8 @@ import (
 	"github.com/Azure/azqr/internal/scanners"
 	"github.com/google/uuid"
 )
+
+var tenantID = os.Getenv("AZURE_TENANT_ID")
 
 type (
 	ReportData struct {
@@ -28,6 +31,7 @@ type (
 	}
 
 	ResourceResult struct {
+		TenantID         string `json:"Tenant ID"`
 		ValidationAction string `json:"validationAction"`
 		RecommendationId string `json:"recommendationId"`
 		Name             string `json:"name"`
@@ -50,6 +54,7 @@ type (
 	}
 
 	RetirementResult struct {
+		TenantID        string    `json:"Tenant ID"`
 		Subscription    string    `json:"Subscription"`
 		TrackingId      string    `json:"TrackingId"`
 		Status          string    `json:"Status"`
@@ -65,7 +70,7 @@ type (
 )
 
 func (rd *ReportData) ResourcesTable() [][]string {
-	headers := []string{"Subscription ID", "Resource Group", "Location", "Type", "Name", "Sku Name", "Sku Tier", "Kind", "SLA", "Resource ID"}
+	headers := []string{"Tenant ID", "Subscription ID", "Resource Group", "Location", "Type", "Name", "Sku Name", "Sku Tier", "Kind", "SLA", "Resource ID"}
 
 	rows := [][]string{}
 	for _, r := range rd.Resources {
@@ -86,6 +91,7 @@ func (rd *ReportData) ResourcesTable() [][]string {
 		}
 
 		row := []string{
+			tenantID,
 			MaskSubscriptionID(r.SubscriptionID, rd.Mask),
 			r.ResourceGroup,
 			r.Location,
@@ -105,11 +111,11 @@ func (rd *ReportData) ResourcesTable() [][]string {
 }
 
 func (rd *ReportData) ImpactedTable() [][]string {
-	headers := []string{"Validated Using", "Source", "Category", "Impact", "Resource Type", "Recommendation", "Recommendation Id", "Subscription Id", "Subscription Name", "Resource Group", "Name", "Id", "Param1", "Param2", "Param3", "Param4", "Param5", "Learn"}
+	headers := []string{"Tenant ID", "Validated Using", "Source", "Category", "Impact", "Resource Type", "Recommendation", "Recommendation Id", "Subscription Id", "Subscription Name", "Resource Group", "Name", "Id", "Param1", "Param2", "Param3", "Param4", "Param5", "Learn"}
 
 	rows := [][]string{}
 	for _, r := range rd.AprlData {
-		row := []string{
+		row := append([]string{tenantID}, []string{
 			"Azure Resource Graph",
 			r.Source,
 			string(r.Category),
@@ -128,7 +134,7 @@ func (rd *ReportData) ImpactedTable() [][]string {
 			r.Param4,
 			r.Param5,
 			r.Learn,
-		}
+		}...)
 		rows = append(rows, row)
 	}
 
@@ -144,6 +150,7 @@ func (rd *ReportData) ImpactedTable() [][]string {
 					r.Recommendation,
 					r.RecommendationID,
 					MaskSubscriptionID(d.SubscriptionID, rd.Mask),
+					d.TenantID,
 					d.SubscriptionName,
 					d.ResourceGroup,
 					d.ServiceName,
@@ -165,11 +172,12 @@ func (rd *ReportData) ImpactedTable() [][]string {
 }
 
 func (rd *ReportData) CostTable() [][]string {
-	headers := []string{"From", "To", "Subscription", "Subscription Name", "ServiceName", "Value", "Currency"}
+	headers := []string{"Tenant ID", "From", "To", "Subscription", "Subscription Name", "ServiceName", "Value", "Currency"}
 
 	rows := [][]string{}
 	for _, r := range rd.CostData.Items {
 		row := []string{
+			tenantID,
 			rd.CostData.From.Format("2006-01-02"),
 			rd.CostData.To.Format("2006-01-02"),
 			MaskSubscriptionID(r.SubscriptionID, rd.Mask),
@@ -186,10 +194,11 @@ func (rd *ReportData) CostTable() [][]string {
 }
 
 func (rd *ReportData) DefenderTable() [][]string {
-	headers := []string{"Subscription", "Subscription Name", "Name", "Tier", "Deprecated"}
+	headers := []string{"Tenant ID", "Subscription", "Subscription Name", "Name", "Tier", "Deprecated"}
 	rows := [][]string{}
 	for _, d := range rd.DefenderData {
 		row := []string{
+			tenantID,
 			MaskSubscriptionID(d.SubscriptionID, rd.Mask),
 			d.SubscriptionName,
 			d.Name,
@@ -204,10 +213,11 @@ func (rd *ReportData) DefenderTable() [][]string {
 }
 
 func (rd *ReportData) AdvisorTable() [][]string {
-	headers := []string{"Subscription", "Subscription Name", "Type", "Name", "Category", "Impact", "Description", "ResourceID", "RecommendationID"}
+	headers := []string{"Tenant ID", "Subscription", "Subscription Name", "Type", "Name", "Category", "Impact", "Description", "ResourceID", "RecommendationID"}
 	rows := [][]string{}
 	for _, d := range rd.AdvisorData {
 		row := []string{
+			tenantID,
 			MaskSubscriptionID(d.SubscriptionID, rd.Mask),
 			d.SubscriptionName,
 			d.Type,
@@ -245,7 +255,7 @@ func (rd *ReportData) RecommendationsTable() [][]string {
 		}
 	}
 
-	headers := []string{"Implemented", "Number of Impacted Resources", "Azure Service / Well-Architected", "Recommendation Source",
+	headers := []string{"Tenant ID", "Implemented", "Number of Impacted Resources", "Azure Service / Well-Architected", "Recommendation Source",
 		"Azure Service Category / Well-Architected Area", "Azure Service / Well-Architected Topic", "Resiliency Category", "Recommendation",
 		"Impact", "Best Practices Guidance", "Read More", "Recommendation Id"}
 	rows := [][]string{}
@@ -267,6 +277,7 @@ func (rd *ReportData) RecommendationsTable() [][]string {
 			}
 
 			row := []string{
+				tenantID,
 				fmt.Sprintf("%t", implemented),
 				fmt.Sprint(counter[r.RecommendationID]),
 				"Azure Service",
@@ -289,10 +300,11 @@ func (rd *ReportData) RecommendationsTable() [][]string {
 }
 
 func (rd *ReportData) ResourceTypesTable() [][]string {
-	headers := []string{"Subscription", "Resource Type", "Number of Resources", "Available in APRL?", "Custom1", "Custom2", "Custom3"}
+	headers := []string{"Tenant ID", "Subscription", "Resource Type", "Number of Resources", "Available in APRL?", "Custom1", "Custom2", "Custom3"}
 	rows := [][]string{}
 	for _, r := range rd.ResourceTypeCount {
 		row := []string{
+			tenantID,
 			r.Subscription,
 			r.ResourceType,
 			fmt.Sprint(r.Count),
@@ -318,6 +330,7 @@ func (rd *ReportData) ResourceIDs() []*string {
 }
 
 func NewReportData(outputFile string, mask bool) ReportData {
+
 	return ReportData{
 		OutputFileName: outputFile,
 		Mask:           mask,

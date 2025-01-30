@@ -49,6 +49,7 @@ type (
 
 	// AzqrServiceResult - Struct for all Azure Service Results
 	AzqrServiceResult struct {
+		TenantID         string
 		SubscriptionID   string
 		SubscriptionName string
 		ResourceGroup    string
@@ -59,6 +60,7 @@ type (
 	}
 
 	AzqrRecommendation struct {
+		TenantID           string
 		RecommendationID   string
 		ResourceType       string
 		Recommendation     string
@@ -70,6 +72,7 @@ type (
 	}
 
 	AzqrResult struct {
+		TenantID           string
 		RecommendationID   string
 		ResourceType       string
 		Recommendation     string
@@ -95,6 +98,7 @@ type (
 	}
 
 	ResourceTypeCount struct {
+		TenantID        string  `json:"Tenant ID"`
 		Subscription    string  `json:"Subscription"`
 		ResourceType    string  `json:"Resource Type"`
 		Count           float64 `json:"Number of Resources"`
@@ -105,6 +109,7 @@ type (
 	}
 
 	AprlRecommendation struct {
+		TenantID            string `yaml:"tenantId,omitempty"`
 		RecommendationID    string `yaml:"aprlGuid"`
 		Recommendation      string `yaml:"description"`
 		Category            string `yaml:"recommendationControl"`
@@ -126,6 +131,7 @@ type (
 	}
 
 	AprlResult struct {
+		TenantID            string
 		RecommendationID    string
 		ResourceType        string
 		Recommendation      string
@@ -175,6 +181,7 @@ const (
 
 func (r *AzqrRecommendation) ToAzureAprlRecommendation() AprlRecommendation {
 	return AprlRecommendation{
+		TenantID:            r.TenantID,
 		RecommendationID:    r.RecommendationID,
 		Recommendation:      r.Recommendation,
 		Category:            string(r.Category),
@@ -210,6 +217,7 @@ func (e *RecommendationEngine) evaluateRecommendation(rule AzqrRecommendation, t
 	broken, result := rule.Eval(target, scanContext)
 
 	return AzqrResult{
+		TenantID:           rule.TenantID,
 		RecommendationID:   rule.RecommendationID,
 		Category:           rule.Category,
 		Recommendation:     rule.Recommendation,
